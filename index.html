@@ -172,13 +172,14 @@
 @media(max-width:480px){.history-kpi.history-kpi-cards{grid-template-columns:1fr}}
 
 /* Assinatura institucional da capa: imagem externa, alinhada ao contato */
-.hero-main .hero-signature{position:absolute;left:8%;bottom:12px;right:3%;display:flex;align-items:center;gap:16px;z-index:2;max-width:700px}
+.hero-main .hero-signature{position:absolute;left:5%;bottom:12px;right:3%;display:flex;align-items:center;gap:16px;z-index:2;max-width:700px}
 .hero-main .hero-signature-logo{display:block;width:180px;height:auto;max-height:90px;object-fit:contain;flex:0 0 auto}
 .hero-main .hero-signature .hero-contact{position:static;bottom:auto;font-size:12px;line-height:1.9;min-width:0}
 /* Ajuste fino do alinhamento visual entre a marca e o bloco de contato */
 .hero-main .hero-signature .hero-contact{transform:translateY(-18px)}
 @media(max-width:720px){.hero-main .hero-signature .hero-contact{transform:none}}
 @media(max-width:720px){.hero-main .hero-signature{position:relative;left:auto;right:auto;bottom:auto;margin-top:50px;gap:12px;flex-wrap:wrap}.hero-main .hero-signature-logo{width:150px}.hero-main .hero-signature .hero-contact{font-size:11px}}
+.pr-bar i{background:#3F6476}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
@@ -364,7 +365,7 @@
 <div class="modal-backdrop hidden" id="modal" onclick="if(event.target===this)closeGuide()"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" onclick="closeGuide()" aria-label="Fechar">✕</button><h2 id="modalTitle"></h2><div id="modalContent"></div></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const colors={'Amazônia':'#27834c','Área Marinha':'#46a5f6','Caatinga':'#e5bd24','Cerrado':'#ec916b','Mata Atlântica':'#39b96c','Pampa':'#df79b4','Pantanal':'#f26159'};
+const colors={'Amazônia':'#0B552B','Área Marinha':'#3F6476','Caatinga':'#DCC7A1','Cerrado':'#CFA14E','Mata Atlântica':'#8BA688','Pampa':'#9C806E','Pantanal':'#B9603F'};
 const guideContent={
 navegacao:['Navegação',`<h3>Como navegar</h3><p>Na capa, selecione <b>Acessar painel</b>. Utilize o menu para alternar entre as páginas e o ícone de casa para retornar à capa.</p><h3>Conteúdo das páginas</h3><ul><li><b>Panorama:</b> situação dos Planos de Manejo das UCs federais, distribuição territorial e características das unidades.</li><li><b>Elaboração / Revisão:</b> processos em andamento, tipos de demanda e etapas.</li><li><b>Histórico:</b> publicações e evolução temporal dos Planos de Manejo.</li><li><b>Planejamentos Temáticos:</b> demandas, prioridades e informações do catálogo.</li><li><b>Priorização 2027–2028:</b> listas de elaboração, revisão geral e respectivos cadastros de reserva.</li><li><b>Zonas de Amortecimento:</b> situação das ZAs, propostas e informações dos instrumentos.</li></ul>`],
 informacao:['Informação',`<h3>Sobre este painel</h3><p>Ferramenta de consulta e visualização de informações sobre os Planos de Manejo das Unidades de Conservação federais e instrumentos relacionados, para apoiar o acompanhamento e a gestão da informação.</p><h3>Origem dos dados</h3><p>As páginas <b>Panorama, Elaboração / Revisão, Histórico e Planejamentos Temáticos</b> utilizam dados consolidados em <b>dados_pm.xlsx</b>, provenientes de consultas a bases institucionais do SharePoint. A página <b>Zonas de Amortecimento</b> utiliza <b>dados_za.xlsx</b>. As listas de <b>Priorização 2027–2028</b> correspondem à priorização do biênio, com atributos das UCs relacionados à base geral.</p><p>Os dados apresentados refletem o conteúdo dos arquivos publicados e podem depender de atualização e conferência pelas áreas responsáveis.</p><h3>Referência institucional</h3><p>COMAN / DMOP / DIMAN / ICMBio.</p>`],
@@ -468,7 +469,7 @@ function exportCsv(){
 }
 
 const processTypes=['Elaboração','Revisão geral','Revisão pontual','Elaboração de ZA'];
-const processColors={'Elaboração':'#2563eb','Revisão geral':'#e89a23','Revisão pontual':'#15966a','Elaboração de ZA':'#8956c8'};
+const processColors={'Elaboração':'#0B552B','Revisão geral':'#CFA14E','Revisão pontual':'#3F6476','Elaboração de ZA':'#B9603F'};
 let processes=[],processMap=null,processMarkers=[],selectedProcess=null;
 const selectedProcessStages=new Set(),selectedProcessTypes=new Set();
 function processToggleSet(set,value,event){const wasSelected=set.has(value);const multi=!!(event&&(event.ctrlKey||event.metaKey));if(!multi)set.clear();if(!wasSelected)set.add(value);else if(multi)set.delete(value);selectedProcess=null;renderProcesses()}
@@ -558,7 +559,7 @@ function renderProcesses(){if(!el('processTbody'))return;let rows=processFiltere
   const stageRank=label=>{const clean=String(label).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();const index=stageSequence.findIndex(x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()===clean);return index<0?999:index};
   const stages=[...stageCounts.entries()].sort((a,b)=>stageRank(a[0])-stageRank(b[0])||a[0].localeCompare(b[0],'pt-BR'));
   const max=Math.max(1,...stages.map(x=>x[1]));
-  el('processBars').innerHTML=stages.length?stages.map(([etapa,n])=>`<div class="process-stage-click" data-stage="${esc(etapa)}" role="button" tabindex="0" style="cursor:pointer;opacity:${selectedProcessStages.size&&!selectedProcessStages.has(etapa)?'.42':'1'};outline:${selectedProcessStages.has(etapa)?'2px solid #2563eb':'none'};outline-offset:3px;border-radius:5px"><div class="process-bar-head"><span>${esc(etapa)}</span><b>${n}</b></div><div class="process-bar-track"><div class="process-bar-fill" style="width:${100*n/max}%;background:#172c9f"></div></div></div>`).join(''):'<p class="sub">Nenhum processo encontrado.</p>';
+  el('processBars').innerHTML=stages.length?stages.map(([etapa,n])=>`<div class="process-stage-click" data-stage="${esc(etapa)}" role="button" tabindex="0" style="cursor:pointer;opacity:${selectedProcessStages.size&&!selectedProcessStages.has(etapa)?'.42':'1'};outline:${selectedProcessStages.has(etapa)?'2px solid #2563eb':'none'};outline-offset:3px;border-radius:5px"><div class="process-bar-head"><span>${esc(etapa)}</span><b>${n}</b></div><div class="process-bar-track"><div class="process-bar-fill" style="width:${100*n/max}%;background:${['#0B552B','#8BA688','#DCC7A1','#CFA14E','#B9603F','#3F6476'][stages.findIndex(x=>x[0]===etapa)%6]}"></div></div></div>`).join(''):'<p class="sub">Nenhum processo encontrado.</p>';
   el('processBars').querySelectorAll('[data-stage]').forEach(node=>{const activate=e=>processToggleSet(selectedProcessStages,node.dataset.stage,e);node.addEventListener('click',activate);node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(e)}})});
   if(processMap){processMarkers.forEach(m=>processMap.removeLayer(m));processMarkers=[];rows.forEach(p=>{if(!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lon)))return;let m=L.circleMarker([Number(p.lat),Number(p.lon)],{radius:String(selectedProcess)===String(p.id)?12:8,weight:2,color:'#fff',fillColor:processColors[p.tipo]||'#777',fillOpacity:.96}).addTo(processMap);m.bindTooltip(`<b>${esc(p.nome)}</b><br>${esc(p.tipo)}<br>Etapa: ${esc(p.etapa||'Não informada')}<br>GR: ${esc(p.gr||'Não informada')}`,{direction:'top',sticky:true,opacity:.96});m.on('click',e=>processSelect(p.id,e.originalEvent));processMarkers.push(m)});requestAnimationFrame(()=>processMap.invalidateSize())}
 }
@@ -671,8 +672,8 @@ function renderHistory(){
  const annualUndefined=annualYears.map(y=>kinds.filter(r=>r.ano===y&&r.kind==='revisao_nao_usada').length);
  const chart1=histCharts.cum||(histCharts.cum=echarts.init(el('histCumulative')));
  chart1.setOption({animationDuration:300,tooltip:{trigger:'axis'},legend:{top:8,data:['Elaboração de Planos de Manejo (acumulado)','Criação de UCs federais (acumulado)']},grid:{left:48,right:22,top:68,bottom:46},xAxis:{type:'category',data:xs.map(String),axisLabel:{hideOverlap:true}},yAxis:{type:'value',min:0},series:[
- {name:'Elaboração de Planos de Manejo (acumulado)',type:'bar',data:cumulativePM,itemStyle:{color:'#238be9'},barMaxWidth:34},
- {name:'Criação de UCs federais (acumulado)',type:'line',data:cumulativeUC,smooth:false,symbol:'none',lineStyle:{width:2,color:'#182d9e'},areaStyle:{color:'rgba(24,45,158,.12)'},itemStyle:{color:'#182d9e'},markLine:{silent:true,symbol:'none',label:{show:true,formatter:'Criação do ICMBio — 2007',position:'insideEndTop',rotate:0,offset:[79,-17],backgroundColor:'rgba(255,255,255,.94)',padding:[3,5],color:'#bf3445',fontWeight:'bold',fontSize:11},lineStyle:{color:'#f05a65',width:2,type:'solid'},data:[{xAxis:'2007'}]}}
+ {name:'Elaboração de Planos de Manejo (acumulado)',type:'bar',data:cumulativePM,itemStyle:{color:'#0B552B'},barMaxWidth:34},
+ {name:'Criação de UCs federais (acumulado)',type:'line',data:cumulativeUC,smooth:false,symbol:'none',lineStyle:{width:2,color:'#3F6476'},areaStyle:{color:'rgba(63,100,118,.12)'},itemStyle:{color:'#3F6476'},markLine:{silent:true,symbol:'none',label:{show:true,formatter:'Criação do ICMBio — 2007',position:'insideEndTop',rotate:0,offset:[79,-17],backgroundColor:'rgba(255,255,255,.94)',padding:[3,5],color:'#bf3445',fontWeight:'bold',fontSize:11},lineStyle:{color:'#f05a65',width:2,type:'solid'},data:[{xAxis:'2007'}]}}
  ]},true);
  const chart2=histCharts.annual||(histCharts.annual=echarts.init(el('histAnnual')));
  const prevLegend=chart2.getOption()?.legend?.[0]?.selected||{};
@@ -682,8 +683,8 @@ function renderHistory(){
  }
  const label={show:true,position:'inside',color:'#fff',fontSize:10,fontWeight:'bold',formatter:p=>p.value>0?String(p.value):''};
  chart2.setOption({animationDuration:300,tooltip:{trigger:'axis'},legend:{top:8,data:['Planos Elaborados','Revisões'],selected:prevLegend},grid:{left:40,right:12,top:60,bottom:40},xAxis:{type:'category',data:annualYears.map(String),axisLabel:{interval:2,hideOverlap:true}},yAxis:{type:'value',minInterval:1},series:[
- {name:'Planos Elaborados',type:'bar',stack:'publicacoes',data:annualElaborations,itemStyle:{color:'#208cf0'},barMaxWidth:42,barMinWidth:12,label},
- {name:'Revisões',type:'bar',stack:'publicacoes',data:annualGeneral,itemStyle:{color:'#172b99'},barMaxWidth:42,barMinWidth:12,label},
+ {name:'Planos Elaborados',type:'bar',stack:'publicacoes',data:annualElaborations,itemStyle:{color:'#0B552B'},barMaxWidth:42,barMinWidth:12,label},
+ {name:'Revisões',type:'bar',stack:'publicacoes',data:annualGeneral,itemStyle:{color:'#CFA14E'},barMaxWidth:42,barMinWidth:12,label},
 
  ]},true);
  chart1.resize();chart2.resize();updateHistoryMean(chart2);
@@ -781,7 +782,7 @@ function ptChartCategory(r,key){if(key==='specific'){const t=String(r.tipo||'').
 function ptSelectChart(key,name){ptChartFilters[key]===name?delete ptChartFilters[key]:ptChartFilters[key]=name;ptRender()}
 function ptChartRows(key){const chosen=ptChartFilters[key];if(!chosen)return ptFiltered();delete ptChartFilters[key];const rows=ptFiltered();ptChartFilters[key]=chosen;return rows}
 function ptBars(id,rows,key){const vals=ptCounts(rows,key),root=el(id);if(!vals.length){root.innerHTML='<p class="sub">Nenhum registro encontrado.</p>';return}const max=vals[0][1];root.innerHTML='<div class="pt-bar-list">'+vals.map(([name,n])=>`<button type="button" class="pt-bar-row ${ptChartFilters[key]===name?'pt-chart-active':''}" title="Clique para filtrar; clique novamente para remover" data-pt-key="${ptEsc(key)}" data-pt-name="${ptEsc(name)}" aria-pressed="${ptChartFilters[key]===name}"><span class="pt-bar-label">${ptEsc(name)}</span><span class="pt-bar-track"><span class="pt-bar-fill" style="width:${Math.max(4,n/max*100)}%"></span></span><b>${n}</b></button>`).join('')+'</div>'}
-const ptColors=['#065f46','#2f946c','#71b998','#a4d3a5','#457d65','#a0aab4','#d7b875','#6d8fc4','#805aa4'];
+const ptColors=['#0B552B','#8BA688','#DCC7A1','#CFA14E','#B9603F','#3F6476','#63896C','#B58D63','#738F9B'];
 function ptDonut(id,rows,key){const vals=ptCounts(rows,key),root=el(id),total=vals.reduce((a,x)=>a+x[1],0);if(!total){root.innerHTML='<p class="sub">Nenhum registro encontrado.</p>';return}let acc=0;const parts=vals.map(([name,n],i)=>{const a=acc;acc+=n/total*100;return `${ptColors[i%ptColors.length]} ${a}% ${acc}%`});root.innerHTML=`<div class="pt-donut-layout"><div class="pt-donut-ring pt-donut-clickable" data-pt-key="${key}" data-pt-slices="${ptEsc(JSON.stringify(vals.map(x=>x[0])))}" style="background:conic-gradient(${parts.join(',')})"><div class="pt-donut-hole"><strong>${total}</strong><small>demandas</small></div></div><div class="pt-donut-legend">${vals.map(([name,n],i)=>`<button type="button" class="pt-legend-item pt-legend-button ${ptChartFilters[key]===name?'pt-chart-active':''}" data-pt-key="${key}" data-pt-name="${ptEsc(name)}" aria-pressed="${ptChartFilters[key]===name}"><span class="pt-legend-dot" style="background:${ptColors[i%ptColors.length]}"></span><span>${ptEsc(name)}</span><b>${n.toLocaleString('pt-BR')} · ${(100*n/total).toLocaleString('pt-BR',{maximumFractionDigits:1})}%</b></button>`).join('')}</div></div>`}
 
 function ptSpecific(rows){
@@ -789,7 +790,7 @@ function ptSpecific(rows){
  const counts=[['Plano Temático Específico',0],['Plano Temático (não específico)',0],['Sem previsão / não classificado',0]];
  rows.forEach(r=>{const t=String(r.tipo||'').trim().toLocaleLowerCase('pt-BR');if(t==='plano temático específico')counts[0][1]++;else if(t==='plano temático')counts[1][1]++;else counts[2][1]++;});
  const total=rows.length;if(!total){root.innerHTML='<p class="sub">Nenhum registro encontrado.</p>';return;}
- const palette=['#16785b','#70b79c','#c5ced8'];let acc=0;
+ const palette=['#0B552B','#CFA14E','#3F6476'];let acc=0;
  const parts=counts.map(([,n],i)=>{const a=acc;acc+=n/total*100;return `${palette[i]} ${a}% ${acc}%`});
  root.innerHTML=`<div class="pt-donut-layout"><div class="pt-donut-ring pt-donut-clickable" data-pt-key="specific" data-pt-slices="${ptEsc(JSON.stringify(counts.map(x=>x[0])))}" style="background:conic-gradient(${parts.join(',')})"><div class="pt-donut-hole"><strong>${total}</strong><small>demandas</small></div></div><div class="pt-donut-legend">${counts.map(([name,n],i)=>`<button type="button" class="pt-legend-item pt-legend-button ${ptChartFilters.specific===name?'pt-chart-active':''}" data-pt-key="specific" data-pt-name="${ptEsc(name)}"><span class="pt-legend-dot" style="background:${palette[i]}"></span><span>${ptEsc(name)}</span><b>${n} · ${(100*n/total).toLocaleString('pt-BR',{maximumFractionDigits:1})}%</b></button>`).join('')}</div></div>`;
 }
