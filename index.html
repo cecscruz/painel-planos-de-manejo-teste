@@ -1006,8 +1006,47 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
    return img;
   }
   const capture=await loadCapture();
-  // Captura somente a área do gráfico, nunca o painel inteiro.
-  return await capture(element,{backgroundColor:'#ffffff',scale:3,useCORS:true,logging:false});
+  // html2canvas não reproduz consistentemente conic-gradient. Para a exportação,
+  // desenhamos temporariamente as fatias em canvas, preservando a rosca e legenda.
+  const rings=[...element.querySelectorAll('.pt-donut-ring')];
+  const restorations=[];
+  try{
+   for(const ring of rings){
+    const gradient=getComputedStyle(ring).backgroundImage;
+    if(!gradient||!gradient.includes('conic-gradient'))continue;
+    const size=ring.getBoundingClientRect();
+    const w=Math.max(1,Math.round(size.width)),h=Math.max(1,Math.round(size.height));
+    const slices=ring.dataset.ptSlices?JSON.parse(ring.dataset.ptSlices):[];
+    const legend=[...element.querySelectorAll('.pt-legend-item')];
+    const counts=legend.map(node=>{
+     const t=node.querySelector('b')?.textContent||'';
+     const n=Number(t.split('·')[0].replace(/\./g,'').trim());
+     return Number.isFinite(n)?n:0;
+    });
+    const colors=legend.map(node=>getComputedStyle(node.querySelector('.pt-legend-dot')).backgroundColor);
+    const total=counts.reduce((a,b)=>a+b,0);
+    if(!total||!colors.length||colors.length!==counts.length)continue;
+    const donutCanvas=document.createElement('canvas');
+    donutCanvas.width=w*3;donutCanvas.height=h*3;
+    donutCanvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0';
+    const dc=donutCanvas.getContext('2d');dc.scale(3,3);
+    let angle=-Math.PI/2;
+    for(let i=0;i<counts.length;i++){
+     const next=angle+counts[i]/total*Math.PI*2;
+     dc.beginPath();dc.moveTo(w/2,h/2);dc.arc(w/2,h/2,Math.min(w,h)/2,angle,next);dc.closePath();
+     dc.fillStyle=colors[i];dc.fill();angle=next;
+    }
+    const oldBackground=ring.style.background;
+    const oldPosition=ring.style.position;
+    const hole=ring.querySelector('.pt-donut-hole');
+    const oldHolePosition=hole?.style.position,oldHoleZ=hole?.style.zIndex;
+    ring.style.background='none';ring.style.position='relative';
+    ring.insertBefore(donutCanvas,ring.firstChild);
+    if(hole){hole.style.position='relative';hole.style.zIndex='1';}
+    restorations.push(()=>{donutCanvas.remove();ring.style.background=oldBackground;ring.style.position=oldPosition;if(hole){hole.style.position=oldHolePosition;hole.style.zIndex=oldHoleZ;}});
+   }
+   return await capture(element,{backgroundColor:'#ffffff',scale:3,useCORS:true,logging:false});
+  }finally{restorations.reverse().forEach(restore=>restore());}
  }
  async function exportChart(id,name,button){
   const element=document.getElementById(id);if(!element)return;
