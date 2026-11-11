@@ -950,21 +950,68 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
   return html2canvasPromise;
  }
  function download(dataUrl,name){const a=document.createElement('a');a.href=dataUrl;a.download=name+'.png';document.body.appendChild(a);a.click();a.remove()}
+ function exportContext(element){
+  const panel=element.closest('.panel')||element;
+  const heading=panel.querySelector('h3,h2');
+  const title=heading?.textContent.trim()||'Gráfico';
+  const subtitle=heading?.nextElementSibling?.matches('p,.muted,.sub,.hint')?heading.nextElementSibling.textContent.trim():'';
+  const section=element.closest('section[id]')||element.closest('[id="dashboard"]');
+  const controls=section?Array.from(section.querySelectorAll('select,input')):[];
+  const used=[];
+  controls.forEach(control=>{
+   if(control.closest('.hidden,[hidden]')||control.disabled||control.type==='hidden'||control.type==='checkbox'||control.type==='radio')return;
+   const label=control.id?section.querySelector('label[for="'+control.id+'"]'):null;
+   const name=(label?.textContent||control.getAttribute('aria-label')||control.placeholder||control.id||'Filtro').trim();
+   let value='';
+   if(control.tagName==='SELECT'){
+    const options=Array.from(control.selectedOptions||[]).filter(o=>o.value&&o.value!=='all'&&o.value!=='todos'&&o.value!=='Todas'&&!/^(todos|todas|selecione|qualquer|todos os|todas as)$/i.test(o.textContent.trim()));
+    value=options.map(o=>o.textContent.trim()).join(', ');
+   }else if(control.type==='text'||control.type==='search')value=control.value.trim();
+   if(value)used.push(name+': '+value);
+  });
+  return {title,subtitle,filters:[...new Set(used)]};
+ }
+ function lines(ctx,text,maxWidth){
+  const words=String(text).split(/\s+/);const result=[];let line='';
+  for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){result.push(line);line=word;}else line=next;}
+  if(line)result.push(line);return result;
+ }
+ async function imageOfChart(element){
+  const instance=window.echarts&&window.echarts.getInstanceByDom(element);
+  if(instance){
+   const src=instance.getDataURL({type:'png',pixelRatio:3,backgroundColor:'#ffffff',excludeComponents:['toolbox']});
+   const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=src;});
+   return img;
+  }
+  const capture=await loadCapture();
+  // Captura somente a área do gráfico, nunca o painel inteiro.
+  return await capture(element,{backgroundColor:'#ffffff',scale:3,useCORS:true,logging:false});
+ }
  async function exportChart(id,name,button){
-  const element=document.getElementById(id);
-  if(!element)return;
-  const old=button.innerHTML;
-  button.disabled=true;button.textContent='Gerando...';
+  const element=document.getElementById(id);if(!element)return;
+  const old=button.innerHTML;button.disabled=true;button.textContent='Gerando...';
   try{
-   const instance=window.echarts&&window.echarts.getInstanceByDom(element);
-   if(instance){
-    download(instance.getDataURL({type:'png',pixelRatio:3,backgroundColor:'#ffffff',excludeComponents:['toolbox']}),name);
-   }else{
-    const capture=await loadCapture();
-    const panel=element.closest('.panel')||element;
-    const canvas=await capture(panel,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false,ignoreElements:el=>el.classList?.contains('chart-export-button')});
-    download(canvas.toDataURL('image/png'),name);
-   }
+   const {title,subtitle,filters}=exportContext(element);
+   const graphic=await imageOfChart(element);
+   const width=Math.max(graphic.width,1200),margin=65;
+   const canvas=document.createElement('canvas');canvas.width=width;
+   const ctx=canvas.getContext('2d');const maxText=width-2*margin;
+   const titleSize=45,subSize=25,filterSize=22,lineGap=12;
+   ctx.font='600 '+titleSize+'px Arial';const titleLines=lines(ctx,title,maxText);
+   ctx.font=subSize+'px Arial';const subtitleLines=subtitle?lines(ctx,subtitle,maxText):[];
+   ctx.font=filterSize+'px Arial';const filterLines=[];
+   for(const f of filters.length?filters:['Nenhum filtro específico selecionado'])filterLines.push(...lines(ctx,f,maxText));
+   const top=margin+titleLines.length*55+(subtitleLines.length?15+subtitleLines.length*34:0)+32+35+filterLines.length*31+42;
+   canvas.height=top+graphic.height+margin;
+   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   let y=margin+35;ctx.fillStyle='#22364b';ctx.font='600 '+titleSize+'px Arial';
+   titleLines.forEach(t=>{ctx.fillText(t,margin,y);y+=55;});
+   if(subtitleLines.length){y+=10;ctx.fillStyle='#52657b';ctx.font=subSize+'px Arial';subtitleLines.forEach(t=>{ctx.fillText(t,margin,y);y+=34;});}
+   y+=30;ctx.fillStyle='#22364b';ctx.font='600 25px Arial';ctx.fillText('Filtros utilizados',margin,y);y+=35;
+   ctx.fillStyle='#52657b';ctx.font=filterSize+'px Arial';filterLines.forEach(t=>{ctx.fillText(t,margin,y);y+=31;});
+   ctx.strokeStyle='#e2e8f0';ctx.beginPath();ctx.moveTo(margin,y+13);ctx.lineTo(width-margin,y+13);ctx.stroke();
+   ctx.drawImage(graphic,(width-graphic.width)/2,top);
+   download(canvas.toDataURL('image/png'),name);
   }catch(err){console.error('Erro ao exportar gráfico:',id,err);alert('Não foi possível gerar esta imagem. Verifique a conexão e tente novamente.');}
   finally{button.disabled=false;button.innerHTML=old;}
  }
