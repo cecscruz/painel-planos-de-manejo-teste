@@ -911,6 +911,79 @@ async function zaLoadExcel(){
  }catch(e){console.error('Falha ao carregar dados_za.xlsx:',e);}
 }
 window.addEventListener('DOMContentLoaded',zaLoadExcel);
-</script></body></html>
+</script>
+<style>
+/* Exportação individual de gráficos — versão de teste */
+.panel.chart-export-enabled{position:relative}
+.chart-export-button{position:absolute;right:16px;top:13px;display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;background:#fff;color:#3F6476;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700;z-index:3;cursor:pointer;box-shadow:0 2px 5px #0000000b}
+.chart-export-button:hover{background:#eef5f5;border-color:#8BA688}
+.chart-export-button:disabled{opacity:.6;cursor:wait}
+.panel.chart-export-enabled>h3{padding-right:125px}
+@media(max-width:600px){.chart-export-button{position:static;margin-bottom:10px}.panel.chart-export-enabled>h3{padding-right:0}}
+</style>
+<script>
+(function(){
+ 'use strict';
+ const charts=[
+  ['donut','panorama_ucs_por_bioma'],
+  ['processBars','elaboracao_revisao_processos_por_etapa'],
+  ['processDonut','elaboracao_revisao_tipos_de_processo'],
+  ['histCumulative','historico_acumulado_planos_e_ucs'],
+  ['histAnnual','historico_producoes_por_ano'],
+  ['ptChartCoord','planejamentos_tematicos_por_coordenacao'],
+  ['ptChartDir','planejamentos_tematicos_por_diretoria'],
+  ['ptChartCg','planejamentos_tematicos_por_coordenacao_geral'],
+  ['ptChartSpecific','planejamentos_tematicos_especificos'],
+  ['ptGapBars','planejamentos_tematicos_sem_previsao_catalogo']
+ ];
+ let html2canvasPromise;
+ function loadCapture(){
+  if(window.html2canvas)return Promise.resolve(window.html2canvas);
+  if(!html2canvasPromise)html2canvasPromise=new Promise((resolve,reject)=>{
+   const script=document.createElement('script');
+   script.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+   script.onload=()=>window.html2canvas?resolve(window.html2canvas):reject(new Error('Biblioteca de imagem indisponível'));
+   script.onerror=()=>reject(new Error('Não foi possível carregar a biblioteca de imagem'));
+   document.head.appendChild(script);
+  }).catch(e=>{html2canvasPromise=null;throw e});
+  return html2canvasPromise;
+ }
+ function download(dataUrl,name){const a=document.createElement('a');a.href=dataUrl;a.download=name+'.png';document.body.appendChild(a);a.click();a.remove()}
+ async function exportChart(id,name,button){
+  const element=document.getElementById(id);
+  if(!element)return;
+  const old=button.innerHTML;
+  button.disabled=true;button.textContent='Gerando...';
+  try{
+   const instance=window.echarts&&window.echarts.getInstanceByDom(element);
+   if(instance){
+    download(instance.getDataURL({type:'png',pixelRatio:3,backgroundColor:'#ffffff',excludeComponents:['toolbox']}),name);
+   }else{
+    const capture=await loadCapture();
+    const panel=element.closest('.panel')||element;
+    const canvas=await capture(panel,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false,ignoreElements:el=>el.classList?.contains('chart-export-button')});
+    download(canvas.toDataURL('image/png'),name);
+   }
+  }catch(err){console.error('Erro ao exportar gráfico:',id,err);alert('Não foi possível gerar esta imagem. Verifique a conexão e tente novamente.');}
+  finally{button.disabled=false;button.innerHTML=old;}
+ }
+ function install(){
+  charts.forEach(([id,name])=>{
+   const element=document.getElementById(id),panel=element?.closest('.panel');
+   if(!panel||panel.querySelector('.chart-export-button'))return;
+   panel.classList.add('chart-export-enabled');
+   const button=document.createElement('button');
+   button.type='button';button.className='chart-export-button';
+   button.title='Baixar gráfico em PNG';button.setAttribute('aria-label','Baixar gráfico em PNG');
+   button.innerHTML='<span aria-hidden="true">↓</span> Baixar PNG';
+   button.addEventListener('click',()=>exportChart(id,name,button));
+   panel.insertBefore(button,panel.firstChild);
+  });
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);
+ else install();
+})();
+</script>
+</body></html>
 
 <style>.history-version.middle,.history-version.first{background:#e5e7eb!important;color:#374151!important;border-color:#cbd5e1!important}.history-version.latest{background:#d1fae5!important;color:#065f46!important;border-color:#86efac!important}</style>
