@@ -955,20 +955,42 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
   const heading=panel.querySelector('h3,h2');
   const title=heading?.textContent.trim()||'Gráfico';
   const subtitle=heading?.nextElementSibling?.matches('p,.muted,.sub,.hint')?heading.nextElementSibling.textContent.trim():'';
-  const section=element.closest('section[id]')||element.closest('[id="dashboard"]');
-  const controls=section?Array.from(section.querySelectorAll('select,input')):[];
+  const id=element.id;
+  const page=id.startsWith('process')?'processPage':id.startsWith('hist')?'historyPage':id.startsWith('pt')?'thematicPage':'panorama';
+  const root=document.getElementById(page);
   const used=[];
-  controls.forEach(control=>{
-   if(control.closest('.hidden,[hidden]')||control.disabled||control.type==='hidden'||control.type==='checkbox'||control.type==='radio')return;
-   const label=control.id?section.querySelector('label[for="'+control.id+'"]'):null;
-   const name=(label?.textContent||control.getAttribute('aria-label')||control.placeholder||control.id||'Filtro').trim();
-   let value='';
-   if(control.tagName==='SELECT'){
-    const options=Array.from(control.selectedOptions||[]).filter(o=>o.value&&o.value!=='all'&&o.value!=='todos'&&o.value!=='Todas'&&!/^(todos|todas|selecione|qualquer|todos os|todas as)$/i.test(o.textContent.trim()));
-    value=options.map(o=>o.textContent.trim()).join(', ');
-   }else if(control.type==='text'||control.type==='search')value=control.value.trim();
-   if(value)used.push(name+': '+value);
-  });
+  const add=(label,values)=>{const vals=[...new Set((Array.isArray(values)?values:[values]).map(v=>String(v??'').trim()).filter(Boolean))];if(vals.length)used.push(label+': '+vals.join(', '));};
+  const controlLabel=(sel)=>root?.querySelector('label[for="'+sel.id+'"]')?.textContent.trim()||sel.getAttribute('aria-label')||sel.id;
+  if(page==='panorama'){
+   const labels={uc:'Unidade de Conservação',plano:'Plano de Manejo',categoria:'Categoria',bioma:'Bioma',grupo:'Grupo',gr:'GR',uf:'UF'};
+   for(const [key,set] of Object.entries(panoramaMulti)){
+    const sel=document.getElementById(key);const opts=sel?[...sel.options]:[];
+    if(set.size&&set.size<opts.filter(o=>o.value).length)add(labels[key]||key,[...set].map(v=>opts.find(o=>o.value===v)?.textContent.trim()||v));
+   }
+   if(document.getElementById('search')?.value.trim())add('Pesquisa',document.getElementById('search').value.trim());
+   if(selectedBiomes.size)add('Seleção no gráfico de biomas',[...selectedBiomes]);
+   if(selectedUCs.size)add('UCs selecionadas no mapa/tabela',selectedUCs.size+' unidade(s)');
+  }else{
+   const ids=page==='processPage'?['processUC','processTipo','processEtapa','processBioma','processGR']:page==='historyPage'?['histUC','histCategoria','histBioma','histGR','histAno']:['ptUc','ptDir','ptCg','ptCoord','ptGr'];
+   for(const fid of ids){
+    const sel=document.getElementById(fid);if(!sel)continue;
+    const chosen=page==='processPage'?processSlicerSelections.get(fid):null;
+    if(chosen&&chosen.size){const opts=[...sel.options];if(chosen.size<opts.filter(o=>o.value).length)add(controlLabel(sel),[...chosen].map(v=>opts.find(o=>o.value===v)?.textContent.trim()||v));}
+    else if(!chosen){const opts=[...sel.selectedOptions].filter(o=>o.value&&!/^(todos|todas|all)$/i.test(o.value));if(opts.length)add(controlLabel(sel),opts.map(o=>o.textContent.trim()));}
+   }
+   const searchId=page==='processPage'?'processSearch':page==='historyPage'?'histSearch':'ptSearch';
+   const query=document.getElementById(searchId)?.value.trim();if(query)add('Pesquisa',query);
+   if(page==='processPage'){
+    if(selectedProcessStages.size)add('Etapas selecionadas no gráfico',[...selectedProcessStages]);
+    if(selectedProcessTypes.size)add('Tipos selecionados no gráfico',[...selectedProcessTypes]);
+    if(selectedProcess)add('Processo selecionado',String(selectedProcess));
+   }
+   if(page==='thematicPage'){
+    const names={coord:'Coordenação / Divisão',dir:'Diretoria / Presidência',cg:'Coordenação-Geral',specific:'Plano Temático Específico'};
+    for(const [key,val] of Object.entries(ptChartFilters))if(val)add('Seleção no gráfico — '+(names[key]||key),val);
+    if(ptGapThemeSelected)add('Tema sem previsão no Catálogo',ptGapThemeSelected);
+   }
+  }
   return {title,subtitle,filters:[...new Set(used)]};
  }
  function lines(ctx,text,maxWidth){
