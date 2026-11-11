@@ -974,7 +974,7 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
    const ids=page==='processPage'?['processUC','processTipo','processEtapa','processBioma','processGR']:page==='historyPage'?['histUC','histCategoria','histBioma','histGR','histAno']:['ptUc','ptDir','ptCg','ptCoord','ptGr'];
    for(const fid of ids){
     const sel=document.getElementById(fid);if(!sel)continue;
-    const chosen=page==='processPage'?processSlicerSelections.get(fid):null;
+    const chosen=page==='processPage'?processSlicerSelections.get(fid):page==='historyPage'?historySlicerSelections.get(fid):null;
     if(chosen&&chosen.size){const opts=[...sel.options];if(chosen.size<opts.filter(o=>o.value).length)add(controlLabel(sel),[...chosen].map(v=>opts.find(o=>o.value===v)?.textContent.trim()||v));}
     else if(!chosen){const opts=[...sel.selectedOptions].filter(o=>o.value&&!/^(todos|todas|all)$/i.test(o.value));if(opts.length)add(controlLabel(sel),opts.map(o=>o.textContent.trim()));}
    }
