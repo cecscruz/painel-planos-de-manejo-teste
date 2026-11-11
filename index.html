@@ -205,6 +205,26 @@
   }
   .hero-main .hero-signature .hero-contact strong{display:inline;}
 }
+
+/* Ajuste final exclusivo da assinatura na capa: escala e ocupação do espaço livre. */
+@media (min-width: 721px) {
+  .hero-main .hero-signature {
+    left: 6%; right: 4%; bottom: 92px; gap: 24px;
+    align-items: center; justify-content: flex-start;
+  }
+  .hero-main .hero-signature-logo {
+    width: 310px; flex: 0 0 310px; max-height: none; height: auto;
+  }
+  .hero-main .hero-signature .hero-contact {
+    font-size: 15px; line-height: 1.6; max-width: 430px;
+    flex: 0 1 430px; transform: none;
+  }
+}
+@media (min-width: 721px) and (max-width: 1100px) {
+  .hero-main .hero-signature { bottom: 65px; gap: 16px; }
+  .hero-main .hero-signature-logo { width: 235px; flex-basis: 235px; }
+  .hero-main .hero-signature .hero-contact { font-size: 12px; max-width: 340px; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
 <style>
