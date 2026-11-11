@@ -915,10 +915,11 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
 <style>
 /* Exportação individual de gráficos — versão de teste */
 .panel.chart-export-enabled{position:relative}
-.chart-export-button{position:absolute;right:16px;top:13px;display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;background:#fff;color:#3F6476;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700;z-index:3;cursor:pointer;box-shadow:0 2px 5px #0000000b}
+.chart-export-toolbar{display:flex;justify-content:flex-end;align-items:center;margin:0 0 10px;min-height:30px}
+.chart-export-button{position:static;display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;background:#fff;color:#3F6476;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700;z-index:3;cursor:pointer;box-shadow:0 2px 5px #0000000b}
 .chart-export-button:hover{background:#eef5f5;border-color:#8BA688}
 .chart-export-button:disabled{opacity:.6;cursor:wait}
-.panel.chart-export-enabled>h3{padding-right:125px}
+.panel.chart-export-enabled>h3{padding-right:0}
 @media(max-width:600px){.chart-export-button{position:static;margin-bottom:10px}.panel.chart-export-enabled>h3{padding-right:0}}
 </style>
 <script>
@@ -955,15 +956,12 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
   const old=button.innerHTML;
   button.disabled=true;button.textContent='Gerando...';
   try{
-   const instance=window.echarts&&window.echarts.getInstanceByDom(element);
-   if(instance){
-    download(instance.getDataURL({type:'png',pixelRatio:3,backgroundColor:'#ffffff',excludeComponents:['toolbox']}),name);
-   }else{
-    const capture=await loadCapture();
-    const panel=element.closest('.panel')||element;
-    const canvas=await capture(panel,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false,ignoreElements:el=>el.classList?.contains('chart-export-button')});
-    download(canvas.toDataURL('image/png'),name);
-   }
+   // Capturar o painel completo inclui título, subtítulo, legendas e indicadores,
+   // inclusive quando a legenda é um elemento HTML fora do canvas ECharts.
+   const capture=await loadCapture();
+   const panel=element.closest('.panel')||element;
+   const canvas=await capture(panel,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false,ignoreElements:el=>el.classList?.contains('chart-export-toolbar')});
+   download(canvas.toDataURL('image/png'),name);
   }catch(err){console.error('Erro ao exportar gráfico:',id,err);alert('Não foi possível gerar esta imagem. Verifique a conexão e tente novamente.');}
   finally{button.disabled=false;button.innerHTML=old;}
  }
@@ -977,7 +975,10 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
    button.title='Baixar gráfico em PNG';button.setAttribute('aria-label','Baixar gráfico em PNG');
    button.innerHTML='<span aria-hidden="true">↓</span> Baixar PNG';
    button.addEventListener('click',()=>exportChart(id,name,button));
-   panel.insertBefore(button,panel.firstChild);
+   const toolbar=document.createElement('div');
+   toolbar.className='chart-export-toolbar';
+   toolbar.appendChild(button);
+   panel.insertBefore(toolbar,panel.firstChild);
   });
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);
