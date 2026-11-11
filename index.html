@@ -1014,6 +1014,7 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
   const old=button.innerHTML;button.disabled=true;button.textContent='Gerando...';
   try{
    const {title,subtitle,filters}=exportContext(element);
+   const showFilters=id!=='histCumulative'; // Gráfico acumulado é independente dos filtros da página.
    const graphic=await imageOfChart(element);
    const width=Math.max(graphic.width,1200),margin=65;
    const canvas=document.createElement('canvas');canvas.width=width;
@@ -1022,16 +1023,18 @@ window.addEventListener('DOMContentLoaded',zaLoadExcel);
    ctx.font='600 '+titleSize+'px Arial';const titleLines=lines(ctx,title,maxText);
    ctx.font=subSize+'px Arial';const subtitleLines=subtitle?lines(ctx,subtitle,maxText):[];
    ctx.font=filterSize+'px Arial';const filterLines=[];
-   for(const f of filters.length?filters:['Nenhum filtro específico selecionado'])filterLines.push(...lines(ctx,f,maxText));
-   const top=margin+titleLines.length*55+(subtitleLines.length?15+subtitleLines.length*34:0)+32+35+filterLines.length*31+42;
+   if(showFilters)for(const f of filters.length?filters:['Nenhum filtro específico selecionado'])filterLines.push(...lines(ctx,f,maxText));
+   const top=margin+titleLines.length*55+(subtitleLines.length?15+subtitleLines.length*34:0)+(showFilters?32+35+filterLines.length*31+42:48);
    canvas.height=top+graphic.height+margin;
    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
    let y=margin+35;ctx.fillStyle='#22364b';ctx.font='600 '+titleSize+'px Arial';
    titleLines.forEach(t=>{ctx.fillText(t,margin,y);y+=55;});
    if(subtitleLines.length){y+=10;ctx.fillStyle='#52657b';ctx.font=subSize+'px Arial';subtitleLines.forEach(t=>{ctx.fillText(t,margin,y);y+=34;});}
-   y+=30;ctx.fillStyle='#22364b';ctx.font='600 25px Arial';ctx.fillText('Filtros utilizados',margin,y);y+=35;
-   ctx.fillStyle='#52657b';ctx.font=filterSize+'px Arial';filterLines.forEach(t=>{ctx.fillText(t,margin,y);y+=31;});
-   ctx.strokeStyle='#e2e8f0';ctx.beginPath();ctx.moveTo(margin,y+13);ctx.lineTo(width-margin,y+13);ctx.stroke();
+   if(showFilters){
+    y+=30;ctx.fillStyle='#22364b';ctx.font='600 25px Arial';ctx.fillText('Filtros utilizados',margin,y);y+=35;
+    ctx.fillStyle='#52657b';ctx.font=filterSize+'px Arial';filterLines.forEach(t=>{ctx.fillText(t,margin,y);y+=31;});
+    ctx.strokeStyle='#e2e8f0';ctx.beginPath();ctx.moveTo(margin,y+13);ctx.lineTo(width-margin,y+13);ctx.stroke();
+   }
    ctx.drawImage(graphic,(width-graphic.width)/2,top);
    download(canvas.toDataURL('image/png'),name);
   }catch(err){console.error('Erro ao exportar gráfico:',id,err);alert('Não foi possível gerar esta imagem. Verifique a conexão e tente novamente.');}
